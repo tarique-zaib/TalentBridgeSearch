@@ -1,7 +1,6 @@
+﻿import crypto from "node:crypto";
 
-const crypto = require("node:crypto");
-
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "GET") {
@@ -13,21 +12,18 @@ module.exports = function handler(req, res) {
   const cookies = req.headers.cookie || "";
   const match = cookies.match(/(?:^|;\s*)tb_admin_session=([^;]+)/);
 
-  if (!secret || !match) {
+  if (!secret || !process.env.ADMIN_USERNAME || !match) {
     return res.status(401).json({ authenticated: false });
   }
 
   try {
     const [payload, signature, extra] = match[1].split(".");
-
     if (!payload || !signature || extra) {
       return res.status(401).json({ authenticated: false });
     }
 
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(payload)
-      .digest("base64url");
+    const expected = crypto.createHmac("sha256", secret)
+      .update(payload).digest("base64url");
 
     const a = Buffer.from(signature);
     const b = Buffer.from(expected);
@@ -52,4 +48,4 @@ module.exports = function handler(req, res) {
   } catch {
     return res.status(401).json({ authenticated: false });
   }
-};
+}

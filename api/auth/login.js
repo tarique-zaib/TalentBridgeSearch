@@ -1,14 +1,12 @@
-
-const crypto = require("node:crypto");
+﻿import crypto from "node:crypto";
 
 function safeEqual(a, b) {
   const x = Buffer.from(String(a));
   const y = Buffer.from(String(b));
-
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 }
 
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "POST") {
@@ -33,9 +31,7 @@ module.exports = function handler(req, res) {
     !safeEqual(username, ADMIN_USERNAME) ||
     !safeEqual(password, ADMIN_PASSWORD)
   ) {
-    return res.status(401).json({
-      error: "Invalid username or password"
-    });
+    return res.status(401).json({ error: "Invalid username or password" });
   }
 
   const payload = Buffer.from(JSON.stringify({
@@ -48,11 +44,9 @@ module.exports = function handler(req, res) {
     .update(payload)
     .digest("base64url");
 
-  const token = `${payload}.${signature}`;
-
   res.setHeader("Set-Cookie",
-    `tb_admin_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`
+    `tb_admin_session=${payload}.${signature}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`
   );
 
   return res.status(200).json({ authenticated: true });
-};
+}

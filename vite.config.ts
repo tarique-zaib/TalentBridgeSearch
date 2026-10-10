@@ -165,7 +165,8 @@ function localApi(env: Record<string, string>) {
                 return send(502, { error: "Ollama could not answer. Check that Ollama is running." });
               }
 
-              const result = await response.json();
+const result: { message?: { content?: string } } =
+  await response.json() as { message?: { content?: string } };
               const answer = result.message?.content;
               if (typeof answer !== "string" || !answer.trim()) {
                 return send(502, { error: "Ollama returned an empty response." });

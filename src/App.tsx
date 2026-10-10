@@ -13,7 +13,7 @@ const samples:Job[] = [
 ];
 export default function App(){
  const [jobs,setJobs]=useState<Job[]>(samples),[q,setQ]=useState(''),[loc,setLoc]=useState('All locations'),[mode,setMode]=useState('All work modes');
- const [modal,setModal]=useState<'apply'|'employer'|null>(null),[job,setJob]=useState<Job|null>(null),[menu,setMenu]=useState(false),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const [modal,setModal]=useState<'apply'|'employer'|null>(null),[,setJob]=useState<Job|null>(null),[menu,setMenu]=useState(false),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const [app,setApp]=useState({name:'',email:'',phone:'',jobTitle:'',message:''}),[enq,setEnq]=useState({companyName:'',name:'',email:'',hiringNeed:''});
  useEffect(()=>{fetch(`${API}/api/jobs`).then(r=>r.ok?r.json():Promise.reject()).then((data:Job[])=>{if(Array.isArray(data)&&data.length)setJobs(data)}).catch(()=>{});},[]);
  const filtered=useMemo(()=>jobs.filter(j=>(!q||`${j.title} ${j.department} ${j.summary} ${j.skills.join(' ')}`.toLowerCase().includes(q.toLowerCase()))&&(loc==='All locations'||j.location.toLowerCase().includes(loc.toLowerCase()))&&(mode==='All work modes'||j.workMode===mode)),[jobs,q,loc,mode]);

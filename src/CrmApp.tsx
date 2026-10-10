@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-
+import RecruitmentChat from "./RecruitmentChat";
 import {
   Activity,
   ArrowUpRight,
@@ -2221,6 +2221,7 @@ export default function CrmApp() {
           </div>
         )}
       </main>
+      <RecruitmentChat crmData={data} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import CrmApp from "./CrmApp";
+import CrmAuthGate from "./CrmAuthGate";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -809,7 +810,7 @@ export default function App() {
   const path = window.location.pathname.replace(/\/$/, "");
 
   if (path === "/crm") {
-    return <CrmApp />;
+    return <CrmAuthGate />;
   }
 
   return <PublicSite />;

@@ -161,74 +161,78 @@ export default function App() {
     setNotice("");
     setModal("apply");
   };
-  
-async function submit(e: FormEvent, kind: 'apply' | 'employer') {
-  e.preventDefault();
-  setBusy(true);
-  setNotice('');
 
-  try {
-    const url =
-      kind === 'employer'
-        ? 'https://formsubmit.co/ajax/naushabaparveen85@gmail.com'
-        : `${API}/api/applications`;
+  async function submit(e: FormEvent, kind: "apply" | "employer") {
+    e.preventDefault();
+    setBusy(true);
+    setNotice("");
 
-    const payload =
-      kind === 'employer'
-        ? {
-            ...enq,
-            _subject: 'New TalentBridge Search Hiring Enquiry',
-            _template: 'table',
-          }
-        : app;
+    try {
+      const url =
+        kind === "employer"
+          ? "https://formsubmit.co/ajax/naushabaparveen85@gmail.com"
+          : `${API}/api/applications`;
 
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+      const payload =
+        kind === "employer"
+          ? {
+              ...enq,
+              _subject: "New TalentBridge Search Hiring Enquiry",
+              _template: "table",
+            }
+          : app;
 
-    const data = await r.json();
-
-    if (!r.ok || (data.success && data.success !== 'true' && data.success !== true)) {
-      throw new Error('Submission failed');
-    }
-
-    setNotice(
-      kind === 'employer'
-        ? 'Thank you! Your hiring enquiry has been submitted.'
-        : 'Thank you — your details have been submitted.'
-    );
-
-    if (kind === 'apply') {
-      setApp({
-        name: '',
-        email: '',
-        phone: '',
-        jobTitle: '',
-        message: '',
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
       });
-    } else {
-      setEnq({
-        companyName: '',
-        name: '',
-        email: '',
-        hiringNeed: '',
-      });
+
+      const data = await r.json();
+
+      if (
+        !r.ok ||
+        (data.success && data.success !== "true" && data.success !== true)
+      ) {
+        throw new Error("Submission failed");
+      }
+
+      setNotice(
+        kind === "employer"
+          ? "Thank you! Your hiring enquiry has been submitted."
+          : "Thank you — your details have been submitted.",
+      );
+
+      if (kind === "apply") {
+        setApp({
+          name: "",
+          email: "",
+          phone: "",
+          jobTitle: "",
+          message: "",
+        });
+      } else {
+        setEnq({
+          companyName: "",
+          name: "",
+          email: "",
+          hiringNeed: "",
+        });
+      }
+    } catch (error) {
+      console.error("Hiring enquiry failed:", error);
+      setNotice(
+        error instanceof Error
+          ? `Enquiry failed: ${error.message}`
+          : "Enquiry failed. Check the browser console.",
+      );
+    } finally {
+      setBusy(false);
     }
-  } catch {
-    setNotice(
-      kind === 'employer'
-        ? 'We could not send your enquiry. Please try again.'
-        : 'The application service is not connected yet.'
-    );
-  } finally {
-    setBusy(false);
   }
-}
 
   return (
     <div className="shell">

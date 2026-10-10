@@ -27,6 +27,7 @@ type Job = {
   summary: string;
   skills: string[];
 };
+import emailjs from "@emailjs/browser";
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5080"
 ).replace(/\/$/, "");
@@ -168,63 +169,44 @@ export default function App() {
     setNotice("");
 
     try {
-      const url =
-        kind === "employer"
-          ? "https://formsubmit.co/ajax/naushabaparveen85@gmail.com"
-          : `${API}/api/applications`;
-
-      const payload =
-        kind === "employer"
-          ? {
-              ...enq,
-              _subject: "New TalentBridge Search Hiring Enquiry",
-              _template: "table",
-            }
-          : app;
-
-      const r = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const responseText = await r.text();
-
-      console.log("FormSubmit HTTP status:", r.status);
-      console.log("FormSubmit response:", responseText);
-
-      if (!r.ok) {
-        throw new Error(
-          `Email service returned HTTP ${r.status}: ${responseText}`,
+      if (kind === "employer") {
+        const result = await emailjs.send(
+          import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+          {
+            company_name: enq.companyName,
+            contact_name: enq.name,
+            work_email: enq.email,
+            hiring_need: enq.hiringNeed,
+          },
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
         );
-      }
 
-      let data: { success?: string | boolean; message?: string };
+        if (result.status !== 200) {
+          throw new Error("EmailJS rejected the enquiry.");
+        }
 
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        throw new Error(`Unexpected email service response: ${responseText}`);
-      }
+        setNotice(
+          "Thank you! Your hiring enquiry has been emailed successfully.",
+        );
+        setEnq({
+          companyName: "",
+          name: "",
+          email: "",
+          hiringNeed: "",
+        });
+      } else {
+        const r = await fetch(`${API}/api/applications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(app),
+        });
 
-      if (
-        data.success === false ||
-        data.success === "false" ||
-        data.success === "error"
-      ) {
-        throw new Error(data.message || "Email service rejected the enquiry");
-      }      
+        if (!r.ok) {
+          throw new Error("Application service is unavailable.");
+        }
 
-      setNotice(
-        kind === "employer"
-          ? "Thank you! Your hiring enquiry has been submitted."
-          : "Thank you — your details have been submitted.",
-      );
-
-      if (kind === "apply") {
+        setNotice("Thank you — your application has been submitted.");
         setApp({
           name: "",
           email: "",
@@ -232,20 +214,14 @@ export default function App() {
           jobTitle: "",
           message: "",
         });
-      } else {
-        setEnq({
-          companyName: "",
-          name: "",
-          email: "",
-          hiringNeed: "",
-        });
       }
     } catch (error) {
-      console.error("Hiring enquiry failed:", error);
+      console.error("Submission failed:", error);
+
       setNotice(
-        error instanceof Error
-          ? `Enquiry failed: ${error.message}`
-          : "Enquiry failed. Check the browser console.",
+        kind === "employer"
+          ? "We could not email your enquiry. Please try again."
+          : "The application service is not connected yet.",
       );
     } finally {
       setBusy(false);

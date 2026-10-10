@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import CrmApp from "./CrmApp";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -105,7 +106,7 @@ const samples: Job[] = [
     skills: ["Python", "SQL", "ETL", "Cloud"],
   },
 ];
-export default function App() {
+function PublicSite() {
   const [jobs, setJobs] = useState<Job[]>(samples),
     [q, setQ] = useState(""),
     [loc, setLoc] = useState("All locations"),
@@ -256,6 +257,9 @@ export default function App() {
           </a>
           <a href="#about" onClick={() => setMenu(false)}>
             About us
+          </a>
+          <a href="/crm" onClick={() => setMenu(false)}>
+            CRM Dashboard
           </a>
           <button
             className="btn dark small"
@@ -799,4 +803,14 @@ export default function App() {
       )}
     </div>
   );
+}
+
+export default function App() {
+  const path = window.location.pathname.replace(/\/$/, "");
+
+  if (path === "/crm") {
+    return <CrmApp />;
+  }
+
+  return <PublicSite />;
 }

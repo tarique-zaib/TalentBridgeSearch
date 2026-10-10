@@ -191,14 +191,32 @@ export default function App() {
         body: JSON.stringify(payload),
       });
 
-      const data = await r.json();
+      const responseText = await r.text();
+
+      console.log("FormSubmit HTTP status:", r.status);
+      console.log("FormSubmit response:", responseText);
+
+      if (!r.ok) {
+        throw new Error(
+          `Email service returned HTTP ${r.status}: ${responseText}`,
+        );
+      }
+
+      let data: { success?: string | boolean; message?: string };
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`Unexpected email service response: ${responseText}`);
+      }
 
       if (
-        !r.ok ||
-        (data.success && data.success !== "true" && data.success !== true)
+        data.success === false ||
+        data.success === "false" ||
+        data.success === "error"
       ) {
-        throw new Error("Submission failed");
-      }
+        throw new Error(data.message || "Email service rejected the enquiry");
+      }      
 
       setNotice(
         kind === "employer"

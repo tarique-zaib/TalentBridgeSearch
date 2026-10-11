@@ -8,9 +8,16 @@ type ChatMessage = {
   content: string;
 };
 
-type Props = { crmData: unknown };
+type ChatResponse = {
+  answer?: string;
+  error?: string;
+};
 
-function makeSafeContext(value: unknown) {
+type Props = {
+  crmData: unknown;
+};
+
+function makeSafeContext(value: unknown): string {
   const data = (value || {}) as Record<string, unknown>;
 
   const pick = (key: string, fields: string[]) => {
@@ -22,9 +29,13 @@ function makeSafeContext(value: unknown) {
       const result: Record<string, string | number> = {};
 
       for (const field of fields) {
-        const v = row[field];
-        if (typeof v === "string") result[field] = v.slice(0, 250);
-        else if (typeof v === "number") result[field] = v;
+        const fieldValue = row[field];
+
+        if (typeof fieldValue === "string") {
+          result[field] = fieldValue.slice(0, 250);
+        } else if (typeof fieldValue === "number") {
+          result[field] = fieldValue;
+        }
       }
 
       return result;
@@ -33,25 +44,54 @@ function makeSafeContext(value: unknown) {
 
   return JSON.stringify({
     clients: pick("clients", [
-      "company", "industry", "location", "status", "followUp"
+      "company",
+      "industry",
+      "location",
+      "status",
+      "followUp",
     ]),
     candidates: pick("candidates", [
-      "name", "skills", "experience", "location", "expectedCtc",
-      "currentCtc", "notice", "source", "status"
+      "name",
+      "skills",
+      "experience",
+      "location",
+      "expectedCtc",
+      "currentCtc",
+      "notice",
+      "source",
+      "status",
     ]),
     jobs: pick("jobs", [
-      "title", "clientId", "location", "workMode", "openings",
-      "experience", "skills", "salary", "priority", "status"
+      "title",
+      "clientId",
+      "location",
+      "workMode",
+      "openings",
+      "experience",
+      "skills",
+      "salary",
+      "priority",
+      "status",
     ]),
     interviews: pick("interviews", [
-      "candidateId", "jobId", "date", "time", "round",
-      "interviewer", "mode", "outcome"
+      "candidateId",
+      "jobId",
+      "date",
+      "time",
+      "round",
+      "interviewer",
+      "mode",
+      "outcome",
     ]),
     placements: pick("placements", [
-      "candidateId", "jobId", "stage", "submitted",
-      "offeredCtc", "joiningDate"
+      "candidateId",
+      "jobId",
+      "stage",
+      "submitted",
+      "offeredCtc",
+      "joiningDate",
     ]),
-    activities: pick("activities", ["title", "date", "type"])
+    activities: pick("activities", ["title", "date", "type"]),
   });
 }
 
@@ -59,7 +99,7 @@ const suggestions = [
   "Show all open jobs.",
   "Find candidates with .NET and Azure skills.",
   "Which client follow-ups are due soon?",
-  "Draft a candidate outreach message."
+  "Draft a candidate outreach message.",
 ];
 
 export default function RecruitmentChat({ crmData }: Props) {
@@ -71,10 +111,16 @@ export default function RecruitmentChat({ crmData }: Props) {
 
   async function sendMessage(text: string) {
     const prompt = text.trim();
+
     if (!prompt || busy) return;
 
     const previous = messages.slice(-6);
-    setMessages((old) => [...old, { role: "user", content: prompt }]);
+
+    setMessages((old) => [
+      ...old,
+      { role: "user", content: prompt },
+    ]);
+
     setQuestion("");
     setError("");
     setBusy(true);
@@ -83,34 +129,71 @@ export default function RecruitmentChat({ crmData }: Props) {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({
           question: prompt,
           context: makeSafeContext(crmData),
-          history: previous
-        })
+          history: previous,
+        }),
       });
 
-      const result = await response.json();
+      // Read the response as text first so an empty response
+      // does not cause "Unexpected end of JSON input".
+      const responseText = await response.text();
+
+      let result: ChatResponse;
+
+      try {
+        result = responseText
+          ? (JSON.parse(responseText) as ChatResponse)
+          : {
+              error:
+                "The AI server returned an empty response. Check that Ollama is running.",
+            };
+      } catch {
+        throw new Error(
+          "The AI server returned an invalid response. Check the local API configuration."
+        );
+      }
 
       if (!response.ok) {
-        throw new Error(result.error || "The assistant could not respond.");
+        throw new Error(
+          result.error ||
+            `The assistant request failed (HTTP ${response.status}).`
+        );
+      }
+
+      if (
+        typeof result.answer !== "string" ||
+        !result.answer.trim()
+      ) {
+        throw new Error(
+          result.error || "The assistant returned no answer."
+        );
       }
 
       setMessages((old) => [
         ...old,
-        { role: "assistant", content: result.answer }
+        {
+          role: "assistant",
+          content: result.answer!.trim(),
+        },
       ]);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Could not reach the assistant."
+        err instanceof Error
+          ? err.message
+          : "Could not reach the assistant."
       );
     } finally {
       setBusy(false);
     }
   }
 
-  function submit(event: FormEvent) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void sendMessage(question);
   }
@@ -118,14 +201,22 @@ export default function RecruitmentChat({ crmData }: Props) {
   return (
     <div className="tb-ai-root">
       {open && (
-        <section className="tb-ai-panel" aria-label="AI recruitment assistant">
+        <section
+          className="tb-ai-panel"
+          aria-label="AI recruitment assistant"
+        >
           <header className="tb-ai-header">
-            <div className="tb-ai-avatar"><Bot size={21} /></div>
+            <div className="tb-ai-avatar">
+              <Bot size={21} />
+            </div>
+
             <div className="tb-ai-heading">
               <strong>TalentBridge AI</strong>
-              <span>Recruitment assistant</span>
+              <span>Recruitment assistant · Ollama</span>
             </div>
+
             <button
+              type="button"
               className="tb-ai-close"
               onClick={() => setOpen(false)}
               aria-label="Close assistant"
@@ -136,18 +227,25 @@ export default function RecruitmentChat({ crmData }: Props) {
 
           <div className="tb-ai-privacy">
             <Sparkles size={14} />
-            Answers use your current CRM snapshot. Selected data is sent to
-            the cloud AI provider. Avoid entering confidential information.
+            <span>
+              Selected CRM data is processed by Ollama on this computer
+              during local development. Avoid including unnecessary
+              confidential information.
+            </span>
           </div>
 
           <div className="tb-ai-messages" aria-live="polite">
             {messages.length === 0 && (
               <div className="tb-ai-welcome">
                 <h3>How can I help with recruitment?</h3>
-                <p>Ask about your current jobs, candidates or follow-ups.</p>
+                <p>
+                  Ask about your current jobs, candidates or follow-ups.
+                </p>
+
                 <div className="tb-ai-suggestions">
                   {suggestions.map((item) => (
                     <button
+                      type="button"
                       key={item}
                       disabled={busy}
                       onClick={() => void sendMessage(item)}
@@ -168,11 +266,20 @@ export default function RecruitmentChat({ crmData }: Props) {
               </div>
             ))}
 
-            {busy && <div className="tb-ai-thinking">Thinking…</div>}
+            {busy && (
+              <div className="tb-ai-thinking" role="status">
+                Ollama is thinking…
+              </div>
+            )}
+
             <div />
           </div>
 
-          {error && <p className="tb-ai-error" role="alert">{error}</p>}
+          {error && (
+            <p className="tb-ai-error" role="alert">
+              {error}
+            </p>
+          )}
 
           <form className="tb-ai-compose" onSubmit={submit}>
             <textarea
@@ -183,6 +290,7 @@ export default function RecruitmentChat({ crmData }: Props) {
               maxLength={2000}
               disabled={busy}
             />
+
             <button
               type="submit"
               disabled={busy || !question.trim()}
@@ -191,6 +299,7 @@ export default function RecruitmentChat({ crmData }: Props) {
               <Send size={18} />
             </button>
           </form>
+
           <div className="tb-ai-footer">
             Suggestions only · CRM records are not changed
           </div>
@@ -198,10 +307,13 @@ export default function RecruitmentChat({ crmData }: Props) {
       )}
 
       <button
+        type="button"
         className="tb-ai-launcher"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        aria-label={open ? "Close AI assistant" : "Open AI assistant"}
+        aria-label={
+          open ? "Close AI assistant" : "Open AI assistant"
+        }
       >
         {open ? <X size={22} /> : <Bot size={23} />}
         {!open && <span>AI Assistant</span>}

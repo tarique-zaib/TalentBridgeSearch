@@ -268,7 +268,7 @@ export default function RecruitmentChat({ crmData }: Props) {
 
             {busy && (
               <div className="tb-ai-thinking" role="status">
-                Ollama is thinking…
+                Thinking…
               </div>
             )}
 

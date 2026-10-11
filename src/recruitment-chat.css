@@ -689,3 +689,63 @@ gap: 5px;
 padding: 5px 8px;
 }
 
+/* Keep AI-generated tables readable inside the chatbot */
+.tb-ai-markdown table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-collapse: collapse;
+  table-layout: auto;
+  white-space: normal;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tb-ai-markdown thead,
+.tb-ai-markdown tbody {
+  width: auto;
+}
+
+.tb-ai-markdown th,
+.tb-ai-markdown td {
+  min-width: 75px;
+  max-width: 180px;
+  padding: 9px 10px;
+  vertical-align: top;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: normal;
+}
+
+.tb-ai-markdown th {
+  min-width: 85px;
+  background: #f1f5f9;
+  color: #263449;
+  font-weight: 700;
+}
+
+.tb-ai-markdown th:first-child,
+.tb-ai-markdown td:first-child {
+  min-width: 120px;
+}
+
+.tb-ai-markdown p,
+.tb-ai-markdown li {
+  overflow-wrap: anywhere;
+}
+
+/* Prevent the chatbot's content from forcing its panel wider */
+.tb-ai-panel,
+.tb-ai-messages,
+.tb-ai-message,
+.tb-ai-markdown {
+  min-width: 0;
+}
+
+.tb-ai-message table {
+  margin: 12px 0;
+}
+
+
